@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 from google.cloud import firestore
 from google.cloud.firestore import SERVER_TIMESTAMP
 from google.oauth2 import service_account
