@@ -1,0 +1,1 @@
+{"duration": 5.489688873291016, "input_args": {"prompt": "'This is a prompt'", "n_examples_per_prompt": "1", "engine": "'text-davinci-003'", "max_tokens": "100", "temperature": "0.7", "top_p": "1.0", "frequency_penalty": "0.0", "presence_penalty": "0.0", "stop": "['END']"}}
