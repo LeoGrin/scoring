@@ -2,7 +2,7 @@ import openai
 import transformers
 from joblib import Memory
 
-memory = Memory("/Users/leo/VSCProjects/newletters/cache", verbose=0)
+memory = Memory("../cache", verbose=0)
 
 
 # @memory.cache
