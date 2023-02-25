@@ -175,7 +175,7 @@ else:
         st.header(f"Full prompt")
         with st.expander("Show prompt"):
             st.text(prompt)
-        st.write(f"Prompt created by {user} on {min_date}")
+        #st.write(f"Prompt created by {user} on {}") #TODO
         # get current prompt id
         prompt_id_for_prompt = [prompt_ids[i] for i, prompt_ in enumerate(prompts) if prompt_ == prompt]
         # There may be several prompts with the same text
