@@ -59,7 +59,7 @@ if __name__ == "__main__":
     file_name = "results/prompt_scoring_results_best.pkl"
 
 
-    n_seeds = 20
+    n_seeds = 1
     n_examples_per_prompt = 4
     all_seeds = list(range(n_seeds))
 
@@ -78,7 +78,9 @@ if __name__ == "__main__":
         prompt_suffix = "Ecris une courte newsletter Frichti du même style que les exemples:"
         complete_prompt = prompt_prefix  + prompt_suffix
         #add to the database and get prompt id
-        # Check if it's already in the database
+        # Check if it's already in the database with the hash
+        #prompts_ref = db.collection("prompts")
+        #prompts = prompts_ref.where("hash", "==", hash(complete_prompt)).stream()
         prompt_ref = prompts_ref.document()
         prompt_ref.set({
             "brand": brand,
@@ -86,18 +88,19 @@ if __name__ == "__main__":
             "sha": sha,
             "user": user,
             "date": datetime.datetime.now(),
+            "hash": hash(complete_prompt),
         })
         prompt_id = prompt_ref.id
 
         print("Generated completions")
         try:
-            response = generate_examples_from_prompts_cached(complete_prompt, n_examples_per_prompt=65, max_tokens=max_tokens,
+            response = generate_examples_from_prompts_cached(complete_prompt, n_examples_per_prompt=1, max_tokens=max_tokens,
                                                                 engine="text-davinci-003", check_if_truncated=True)
         except openai.error.RateLimitError as e:
             print(e)
             print("Sleeping for 1 minute")
             time.sleep(60)
-            response = generate_examples_from_prompts_cached(complete_prompt, n_examples_per_prompt=65, max_tokens=max_tokens,
+            response = generate_examples_from_prompts_cached(complete_prompt, n_examples_per_prompt=1, max_tokens=max_tokens,
                                                                 engine="text-davinci-003", check_if_truncated=True)
             # generated_examples.extend(generate_examples_from_prompts(prompt_prefix, prompt_suffix, prompts, n_examples_per_prompt=80, max_tokens=max_tokens,
             #                                                     engine="text-davinci-003"))
