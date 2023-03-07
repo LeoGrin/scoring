@@ -64,7 +64,7 @@ min_date = datetime.datetime.strptime(min_date.strftime("%d/%m/%Y"), "%d/%m/%Y")
 #Select a prompt created after the min date
 #prompts = [doc.to_dict()["prompt"] for doc in prompts_ref.stream() if doc.to_dict()["brand"] == brand and datetime.datetime.strptime(doc.to_dict()["date"], "%d/%m/%Y %H:%M:%S").date() >= min_date]
 @st.cache_resource()
-def load_prompts(brand, min_date):
+def load_prompts(brand, min_date, model):
     print("Loading prompts..")
     with st.spinner("Loading prompts.."):
         prompts = []
@@ -83,7 +83,11 @@ def load_completions(prompt_ids, model):
     all_completions_dic = {}
     with st.spinner("Loading completions.."):
         for prompt_id in prompt_ids:
-            query = completions_ref.where("prompt_id", "==", prompt_id).where("model", "==", model)
+            if model == "text-davinci-003":
+                # in this case, also accept when the model is not specified
+                query = completions_ref.where("prompt_id", "==", prompt_id).where("model", "in", [model, None])
+            else:
+                query = completions_ref.where("prompt_id", "==", prompt_id).where("model", "==", model)
             for doc in query.stream():
                 completion_dic = doc.to_dict()
                 all_completions_dic[doc.id] = completion_dic

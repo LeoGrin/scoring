@@ -21,6 +21,7 @@ def generate_examples_from_prompts(prompt,
     """
     print("Generating examples from prompt...")
     if engine == "gpt-3.5-turbo":
+        print("Using gpt-3.5-turbo model")
         # the gpt-3.5-turbo model is a bit different from the others
         messages=[         
         {"role": "system", "content": "You are a writer."},         
