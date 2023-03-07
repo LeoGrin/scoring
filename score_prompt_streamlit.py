@@ -64,7 +64,7 @@ min_date = datetime.datetime.strptime(min_date.strftime("%d/%m/%Y"), "%d/%m/%Y")
 #Select a prompt created after the min date
 #prompts = [doc.to_dict()["prompt"] for doc in prompts_ref.stream() if doc.to_dict()["brand"] == brand and datetime.datetime.strptime(doc.to_dict()["date"], "%d/%m/%Y %H:%M:%S").date() >= min_date]
 @st.cache_resource()
-def load_prompts(brand, min_date, model):
+def load_prompts(brand, min_date):
     print("Loading prompts..")
     with st.spinner("Loading prompts.."):
         prompts = []
