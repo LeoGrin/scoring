@@ -4,3 +4,4 @@ wandb/
 .DS_Store
 .streamlit/secrets.toml
 cache/
+/src/__pycache__/

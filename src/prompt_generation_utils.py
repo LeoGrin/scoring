@@ -19,31 +19,53 @@ def generate_examples_from_prompts(prompt,
     """
     Generate examples from a list of prompts, with openai API
     """
-    response = openai.Completion.create(
-        engine=engine,
-        prompt=prompt,
-        temperature=temperature,
-        max_tokens=max_tokens,
-        top_p=top_p,
-        frequency_penalty=frequency_penalty,
-        presence_penalty=presence_penalty,
-        n=n_examples_per_prompt,
-        stop=stop,
-    )
+    print("Generating examples from prompt...")
+    if engine == "gpt-3.5-turbo":
+        # the gpt-3.5-turbo model is a bit different from the others
+        messages=[         
+        {"role": "system", "content": "You are a writer."},         
+        {"role": "user", "content": prompt}]
+        response = openai.ChatCompletion.create(   
+            model="gpt-3.5-turbo",   
+            messages=messages,
+            n=n_examples_per_prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            top_p=top_p,
+            frequency_penalty=frequency_penalty,
+            presence_penalty=presence_penalty,
+            stop=stop,
+        )
+        replies = [response["choices"][i]["message"]["content"] for i in range(n_examples_per_prompt)]
+    else:
+        response = openai.Completion.create(
+            engine=engine,
+            prompt=prompt,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            top_p=top_p,
+            frequency_penalty=frequency_penalty,
+            presence_penalty=presence_penalty,
+            n=n_examples_per_prompt,
+            stop=stop,
+        )
+        replies = [response["choices"][i]["text"] for i in range(n_examples_per_prompt)]
     if check_if_truncated:
         # check if the number of tokens is equal to max_tokens
         # if yes, then the example is truncated
         # tokenize
+        truncated = []
         tokenizer = transformers.AutoTokenizer.from_pretrained("gpt2")
-        for choice in response["choices"]:
-            tokens = tokenizer.encode(choice["text"])
+        for reply in replies:
+            print(reply)
+            tokens = tokenizer.encode(reply)
             if len(tokens) == max_tokens:
-                choice["truncated"] = True
+                truncated.append(True)
             else:
-                choice["truncated"] = False
-        return [(choice["text"], choice["truncated"]) for choice in response["choices"]]
+                truncated.append(False)
+        return [(reply, truncated[i]) for i, reply in enumerate(replies)]
     
-    return [choice["text"] for choice in response["choices"]]
+    return replies
 
 @memory.cache
 def generate_examples_from_prompts_cached(prompt, 

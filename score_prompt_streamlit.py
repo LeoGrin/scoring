@@ -38,7 +38,7 @@ openai.api_key = st.secrets["API_KEY"]
 # Who are you?
 user = st.sidebar.text_input("Who are you?", value="anonymous")
 
-model = st.sidebar.selectbox("Select a model", options=["text-davinci-003"])
+model = st.sidebar.selectbox("Select a model", options=["text-davinci-003", "gpt-3.5-turbo", "code-davinci-002"])
 
 # Add a selectbox to select a prompt
 # get brands from prompts_ref
@@ -79,11 +79,11 @@ def load_prompts(brand, min_date):
     return prompts, prompt_ids
 
 @st.cache_resource()
-def load_completions(prompt_ids):
+def load_completions(prompt_ids, model):
     all_completions_dic = {}
     with st.spinner("Loading completions.."):
         for prompt_id in prompt_ids:
-            query = completions_ref.where("prompt_id", "==", prompt_id)
+            query = completions_ref.where("prompt_id", "==", prompt_id).where("model", "==", model)
             for doc in query.stream():
                 completion_dic = doc.to_dict()
                 all_completions_dic[doc.id] = completion_dic
@@ -182,7 +182,7 @@ else:
         # But maybe we should not allow that
         st.write(f"Prompt ids: {prompt_id_for_prompt}")
         #completions = [doc.to_dict()["completion"] for doc in completions_ref.stream() if doc.to_dict()["prompt_id"] == prompt_id]
-        completions_dic = load_completions(prompt_id_for_prompt)
+        completions_dic = load_completions(prompt_id_for_prompt, model)
         # show number of completions and ratings
         st.header(f"{len(completions_dic)} completions with {sum([len(completions_dic[completion_id]['ratings']) for completion_id in completions_dic])} ratings")
         # Add the possibility to add new completions

@@ -47,6 +47,8 @@ if __name__ == "__main__":
     print("Samples loaded")
 
     brand = "Frichti"
+    #model = "gpt-3.5-turbo"
+    model = "code-davinci-002"
 
     true_examples = data["completion"].values.tolist()
 
@@ -56,10 +58,10 @@ if __name__ == "__main__":
     tokenizer.pad_token = tokenizer.eos_token
     max_tokens = 300
 
-    file_name = "results/prompt_scoring_results_best.pkl"
+    file_name = "results/prompt_scoring_results_best_chat.pkl"
 
 
-    n_seeds = 1
+    n_seeds = 20
     n_examples_per_prompt = 4
     all_seeds = list(range(n_seeds))
 
@@ -75,7 +77,8 @@ if __name__ == "__main__":
 
         #print("Prompt prefix: ", prompt_prefix)
         # Generate examples from the prompt prefix
-        prompt_suffix = "Ecris une courte newsletter Frichti du même style que les exemples:"
+        #prompt_suffix = "Ecris une courte newsletter Frichti du même style que les exemples:"
+        prompt_suffix = f"Example {len(prompts) + 1} \n" #for model not instruction tuned
         complete_prompt = prompt_prefix  + prompt_suffix
         #add to the database and get prompt id
         # Check if it's already in the database with the hash
@@ -92,16 +95,16 @@ if __name__ == "__main__":
         })
         prompt_id = prompt_ref.id
 
-        print("Generated completions")
+        print("Generating completions")
         try:
-            response = generate_examples_from_prompts_cached(complete_prompt, n_examples_per_prompt=1, max_tokens=max_tokens,
-                                                                engine="text-davinci-003", check_if_truncated=True)
+            response = generate_examples_from_prompts_cached(complete_prompt, n_examples_per_prompt=10, max_tokens=max_tokens,
+                                                                engine=model, check_if_truncated=True)
         except openai.error.RateLimitError as e:
             print(e)
             print("Sleeping for 1 minute")
             time.sleep(60)
-            response = generate_examples_from_prompts_cached(complete_prompt, n_examples_per_prompt=1, max_tokens=max_tokens,
-                                                                engine="text-davinci-003", check_if_truncated=True)
+            response = generate_examples_from_prompts_cached(complete_prompt, n_examples_per_prompt=10, max_tokens=max_tokens,
+                                                                engine=model, check_if_truncated=True)
             # generated_examples.extend(generate_examples_from_prompts(prompt_prefix, prompt_suffix, prompts, n_examples_per_prompt=80, max_tokens=max_tokens,
             #                                                     engine="text-davinci-003"))
         print("Generation completed !")
@@ -121,5 +124,6 @@ if __name__ == "__main__":
                 "date": datetime.datetime.now(),
                 "prompt": complete_prompt,
                 "truncated": truncated_list[i],
+                "model": model,
             })
         print("Completions stored in the database")
