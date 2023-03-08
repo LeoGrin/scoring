@@ -43,14 +43,16 @@ if __name__ == "__main__":
     print("firestore database loaded")
     
     # Load the data
-    data = pd.read_json("data/frichti_clean_prepared (2).jsonl", lines=True)
+    #data = pd.read_json("data/frichti_clean_prepared (2).jsonl", lines=True)
+    data = pd.read_json("data/malinandgoetz.jsonl", lines=True)
     print("Samples loaded")
 
-    brand = "Frichti"
+    brand = "Malin + Goetz"
     model = "gpt-3.5-turbo"
     #model = "code-davinci-002"
 
-    true_examples = data["completion"].values.tolist()
+    #true_examples = data["completion"].values.tolist()
+    true_examples = [data["title"][i] + ": " + data["content"][i] for i in range(len(data))]
 
     dic_list = []
 
@@ -58,7 +60,7 @@ if __name__ == "__main__":
     tokenizer.pad_token = tokenizer.eos_token
     max_tokens = 300
 
-    file_name = "results/prompt_scoring_results_best_chat.pkl"
+    file_name = "results/prompt_scoring_results_best_chat_malin.pkl"
 
 
     n_seeds = 20
@@ -70,7 +72,8 @@ if __name__ == "__main__":
     for seed in all_seeds:
         seed = seed
         prompts = sklearn.utils.resample(true_examples, n_samples=4, random_state=seed)
-        prompt_prefix = "Voici des exemples de newsletter Frichti:\n"
+        #prompt_prefix = "Voici des exemples de newsletter Frichti:\n"
+        prompt_prefix = "Here are some examples of Malin + Goetz product descriptions:\n"
         for i, prompt in enumerate(prompts):
             prompt_prefix += f"Example {i + 1} \n"
             prompt_prefix += prompt
@@ -79,7 +82,8 @@ if __name__ == "__main__":
         #print("Prompt prefix: ", prompt_prefix)
         # Generate examples from the prompt prefix
         #prompt_suffix = "Ecris une courte newsletter Frichti du même style que les exemples:"
-        prompt_suffix = f"Example {len(prompts) + 1} \n" #for model not instruction tuned
+        prompt_suffix = "Write a short product description in the same style as the examples:"
+        #prompt_suffix = f"Example {len(prompts) + 1} \n" #for model not instruction tuned
         complete_prompt = prompt_prefix  + prompt_suffix
         #add to the database and get prompt id
         # Check if it's already in the database with the hash

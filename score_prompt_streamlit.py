@@ -52,7 +52,7 @@ model = st.sidebar.selectbox("Select a model", options=["text-davinci-003", "gpt
 #     return brands
 
 # brands = load_brands() #FIXME
-brands = ["Frichti"]
+brands = ["Frichti", "Malin + Goetz"]
 
 
 brand = st.sidebar.selectbox("Select a brand", options=brands)
