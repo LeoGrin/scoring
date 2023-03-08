@@ -79,7 +79,26 @@ def load_prompts(brand, min_date):
     return prompts, prompt_ids
 
 @st.cache_resource()
+def load_all_completions(model, min_date):
+    print("Loading completions..")
+    all_completions_dic = {}
+    with st.spinner("Loading completions.."):
+        query = completions_ref.where("model", "==", model).where("date", ">=", datetime.datetime.combine(min_date, datetime.time.min))
+        for doc in query.stream():
+            completion_dic = doc.to_dict()
+            if "ratings" not in completion_dic:
+                completion_dic["ratings"] = []
+            if "date" not in completion_dic:
+                completion_dic["date"] = "Unknown"
+            if "truncated" not in completion_dic:
+                completion_dic["truncated"] = "Unknown"
+            all_completions_dic[doc.id] = completion_dic
+    print("Done!")
+    return all_completions_dic
+
+@st.cache_resource()
 def load_completions(prompt_ids, model):
+    #TODO use load_all_completions if cached
     all_completions_dic = {}
     with st.spinner("Loading completions.."):
         for prompt_id in prompt_ids:
@@ -91,7 +110,6 @@ def load_completions(prompt_ids, model):
             for doc in query.stream():
                 completion_dic = doc.to_dict()
                 all_completions_dic[doc.id] = completion_dic
-    with st.spinner("Loading ratings.."):
         for completion_id in all_completions_dic:
             if "ratings" not in all_completions_dic[completion_id]:
                 all_completions_dic[completion_id]["ratings"] = []
@@ -99,6 +117,12 @@ def load_completions(prompt_ids, model):
                 all_completions_dic[completion_id]["date"] = "Unknown"
             if "truncated" not in all_completions_dic[completion_id]:
                 all_completions_dic[completion_id]["truncated"] = "Unknown"
+
+    return all_completions_dic
+
+@st.cache_resource()
+def load_ratings(all_completions_dic):
+    with st.spinner("Loading ratings.."):
         # find all ratings for all completions
         #FIXME: this is faster when there are few ratings, but maybe the previous way is better when there are many ratings
         # Slice in bin of 10 to work with firestore query limit
@@ -109,9 +133,12 @@ def load_completions(prompt_ids, model):
                 user = doc.to_dict()["user"]
                 completion_id = doc.to_dict()["completion_id"]
                 all_completions_dic[completion_id]["ratings"].append((rating, user))
-
     return all_completions_dic
 
+@st.cache_resource()
+def load_prompt_from_id(prompt_id):
+    prompt = prompts_ref.document(prompt_id).get().to_dict()["prompt"]
+    return prompt
 # @st.cache_resource()
 # def get_attribute_per_completion(completions_id):
 #     #TODO get completions id and attribute at the same time
@@ -173,6 +200,14 @@ else:
     if len(prompts) == 0:
         st.warning("No prompt for this brand and this date")
     else:
+        # checkbox whether to only show prompts with completions
+        only_show_prompts_with_completions = st.sidebar.checkbox("Only show prompts with completions")
+        if only_show_prompts_with_completions:
+            # get all prompts with completions
+            completions = load_all_completions(model, min_date)
+            print([completion for completion in completions.values()])
+            prompts_id_with_completions = set([completion["prompt_id"] for completion in completions.values()])
+            prompts = [prompt for prompt, prompt_id in zip(prompts, prompt_ids) if prompt_id in prompts_id_with_completions]
         prompt = st.sidebar.selectbox("Select a prompt", options=prompts)
         # Display the completions as a rich text with the possibilty to rate them
         # get current prompt id
@@ -181,12 +216,25 @@ else:
             st.text(prompt)
         #st.write(f"Prompt created by {user} on {}") #TODO
         # get current prompt id
-        prompt_id_for_prompt = [prompt_ids[i] for i, prompt_ in enumerate(prompts) if prompt_ == prompt]
+        if only_show_prompts_with_completions:
+            prompt_id_for_prompt = [id for i, id in enumerate(prompts_id_with_completions) if prompts[i] == prompt] 
+        else:
+            prompt_id_for_prompt = [prompt_ids[i] for i, prompt_ in enumerate(prompts) if prompt_ == prompt]
         # There may be several prompts with the same text
         # But maybe we should not allow that
         st.write(f"Prompt ids: {prompt_id_for_prompt}")
         #completions = [doc.to_dict()["completion"] for doc in completions_ref.stream() if doc.to_dict()["prompt_id"] == prompt_id]
-        completions_dic = load_completions(prompt_id_for_prompt, model)
+        #completions_dic = load_completions(prompt_id_for_prompt, model)
+        if only_show_prompts_with_completions:
+            completions_dic = {}
+            for prompt_id in prompt_id_for_prompt:
+                for key in completions.keys():
+                    if completions[key]["prompt_id"] == prompt_id:
+                        completions_dic[key] = completions[key]
+        else:
+            completions_dic = load_completions(prompt_id_for_prompt, model)
+        completions_dic = load_ratings(completions_dic)
+        print(completions_dic)
         # show number of completions and ratings
         st.header(f"{len(completions_dic)} completions with {sum([len(completions_dic[completion_id]['ratings']) for completion_id in completions_dic])} ratings")
         # Add the possibility to add new completions
